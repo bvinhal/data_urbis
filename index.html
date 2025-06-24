@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <link rel="icon" href="./favicon.ico" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#1e3c72" />
+    <meta
+      name="description"
+      content="Mapa Eleitoral-Fiscal do Brasil - Visualização integrada de dados eleitorais e fiscais"
+    />
+    <link rel="apple-touch-icon" href="./logo192.png" />
+    <link rel="manifest" href="./manifest.json" />
+    <title>Mapa Eleitoral-Fiscal do Brasil</title>
+    <script defer="defer" src="./static/js/main.b2cbd77a.js"></script>
+    <link href="./static/css/main.72ba1fd9.css" rel="stylesheet">
+    <script>
+      // Verificar se os dados estão disponíveis e carregá-los diretamente se necessário
+      window.addEventListener('DOMContentLoaded', function() {
+        // Função para verificar se um arquivo existe
+        function checkFileExists(url) {
+          return new Promise(function(resolve) {
+            var xhr = new XMLHttpRequest();
+            xhr.open('HEAD', url, true);
+            xhr.onreadystatechange = function() {
+              if (xhr.readyState === 4) {
+                resolve(xhr.status === 200);
+              }
+            };
+            xhr.send();
+          });
+        }
+
+        // Verificar e carregar dados eleitorais
+        checkFileExists('./data/electoral/2024_prefeito.json').then(function(exists) {
+          if (!exists) {
+            console.warn('Arquivo de dados eleitorais não encontrado no caminho padrão.');
+            // Tentar carregar de um caminho alternativo se necessário
+          }
+        });
+
+        // Verificar e carregar dados fiscais para São Paulo como exemplo
+        checkFileExists('./data/fiscal/3550308_2022.json').then(function(exists) {
+          if (!exists) {
+            console.warn('Arquivo de dados fiscais não encontrado no caminho padrão.');
+            // Tentar carregar de um caminho alternativo se necessário
+          }
+        });
+      });
+    </script>
+  </head>
+  <body>
+    <noscript>Você precisa habilitar JavaScript para executar este aplicativo.</noscript>
+    <div id="root"></div>
+  </body>
+</html>
