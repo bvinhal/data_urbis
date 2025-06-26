@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solução Cores React</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .diagnostico {
+            background: rgba(76, 175, 80, 0.2);
+            border: 2px solid #4caf50;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        .problema {
+            background: rgba(255, 152, 0, 0.2);
+            border: 2px solid #ff9800;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .solucao {
+            background: rgba(33, 150, 243, 0.2);
+            border: 2px solid #2196f3;
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .codigo {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            overflow-x: auto;
+            white-space: pre-wrap;
+        }
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .destacado {
+            background: rgba(255, 255, 0, 0.2);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 4px solid #FFD700;
+            margin: 15px 0;
+        }
+        .steps {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+        }
+        .step {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 10px 0;
+            border-left: 3px solid #4CAF50;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Solução para Cores no React</h1>
+        
+        <div class="diagnostico">
+            <h3>✅ Diagnóstico Confirmado</h3>
+            <p><strong>Seus dados estão PERFEITOS:</strong></p>
+            <ul style="text-align: left; display: inline-block;">
+                <li>✅ 257 candidatos eleitos</li>
+                <li>✅ 100% compatibilidade de códigos</li>
+                <li>✅ 244 municípios carregando</li>
+                <li>✅ Campo "id" correto no GeoJSON</li>
+            </ul>
+        </div>
+
+        <div class="problema">
+            <h3>🎯 Problema Identificado</h3>
+            <p><strong>O problema está no código React!</strong></p>
+            <p>Os dados estão perfeitos, mas a função que aplica as cores aos municípios não está funcionando corretamente.</p>
+        </div>
+
+        <div class="solucao">
+            <h3>🔧 Soluções Possíveis</h3>
+            
+            <div class="destacado">
+                <h4>🥇 Solução 1: Adicionar Debug no Console</h4>
+                <p>Primeiro, vamos ver o que está acontecendo no código React:</p>
+            </div>
+            
+            <button onclick="gerarCodigoDebug()">🐛 Gerar Código Debug para React</button>
+            
+            <div class="destacado">
+                <h4>🥈 Solução 2: Forçar Cores Manualmente</h4>
+                <p>Se o debug não funcionar, vamos forçar as cores:</p>
+            </div>
+            
+            <button onclick="gerarCodigoForcado()">⚡ Gerar Código com Cores Forçadas</button>
+            
+            <div class="destacado">
+                <h4>🥉 Solução 3: Arquivo de Configuração</h4>
+                <p>Criar arquivo de configuração para o mapa:</p>
+            </div>
+            
+            <button onclick="gerarArquivoConfig()">⚙️ Gerar Arquivo de Configuração</button>
+        </div>
+
+        <div class="steps">
+            <h3>📋 Passos para Implementar</h3>
+            
+            <div class="step">
+                <strong>Passo 1:</strong> Abra o console do navegador na sua aplicação (F12)
+            </div>
+            
+            <div class="step">
+                <strong>Passo 2:</strong> Procure por erros JavaScript relacionados ao mapa
+            </div>
+            
+            <div class="step">
+                <strong>Passo 3:</strong> Use o código debug gerado para identificar onde a coloração para
+            </div>
+            
+            <div class="step">
+                <strong>Passo 4:</strong> Aplique a solução correspondente
+            </div>
+        </div>
+
+        <div id="output" style="display: none; background: rgba(0,0,0,0.3); padding: 20px; border-radius: 10px; margin: 20px 0; font-family: monospace; white-space: pre-wrap;"></div>
+    </div>
+
+    <script>
+        function mostrarOutput(conteudo) {
+            const output = document.getElementById('output');
+            output.style.display = 'block';
+            output.textContent = conteudo;
+        }
+
+        function gerarCodigoDebug() {
+            const codigoDebug = `// CÓDIGO DEBUG PARA ADICIONAR NO SEU COMPONENTE REACT
+
+// 1. Adicione este useEffect no seu componente de mapa:
+useEffect(() => {
+    console.log('=== DEBUG CORES MAPA ===');
+    console.log('Dados eleitorais:', electoralData?.length || 'não carregado');
+    console.log('Dados geográficos:', geoData?.features?.length || 'não carregado');
+    
+    if (electoralData && electoralData.length > 0) {
+        const eleitos = electoralData.filter(d => d.eleito === true);
+        console.log('Candidatos eleitos:', eleitos.length);
+        console.log('Primeiro eleito:', eleitos[0]);
+        
+        // Verificar se função de cor está sendo chamada
+        if (geoData?.features) {
+            console.log('Testando função de cor...');
+            const primeiraFeature = geoData.features[0];
+            console.log('Primeira feature ID:', primeiraFeature.properties.id);
+            
+            const eleitoParaEstaFeature = eleitos.find(e => 
+                e.codigo_municipio === primeiraFeature.properties.id
+            );
+            console.log('Eleito para primeira feature:', eleitoParaEstaFeature?.nome_candidato || 'não encontrado');
+        }
+    }
+    console.log('=== FIM DEBUG ===');
+}, [electoralData, geoData]);
+
+// 2. Na função que define o estilo dos municípios, adicione logs:
+const getFeatureStyle = (feature, electoralData) => {
+    console.log('Aplicando estilo para:', feature.properties.id, feature.properties.name);
+    
+    const eleito = electoralData?.find(d => 
+        d.eleito === true && d.codigo_municipio === feature.properties.id
+    );
+    
+    console.log('Eleito encontrado:', eleito ? eleito.nome_candidato : 'NENHUM');
+    
+    const cor = eleito ? getColorByParty(eleito.partido) : '#cccccc';
+    console.log('Cor aplicada:', cor);
+    
+    return {
+        fillColor: cor,
+        fillOpacity: 0.7,
+        weight: 1,
+        color: 'white'
+    };
+};
+
+// 3. Função para cores por partido:
+const getColorByParty = (partido) => {
+    const cores = {
+        'PT': '#ff0000',      // Vermelho - Esquerda
+        'PSOL': '#ff0000',
+        'PCdoB': '#ff0000',
+        'PSDB': '#0000ff',    // Azul - Centro
+        'CIDADANIA': '#0000ff',
+        'PMB': '#0000ff',
+        'PL': '#ff9800',      // Laranja - Centro-Direita  
+        'PP': '#ff9800',
+        'UNIÃO': '#ff9800',
+        'REPUBLICANOS': '#ff9800',
+        'MDB': '#4caf50',     // Verde - Centro-Direita
+        'PODE': '#4caf50'
+    };
+    
+    const cor = cores[partido] || '#888888';
+    console.log('Partido:', partido, '→ Cor:', cor);
+    return cor;
+};
+
+// INSTRUÇÕES:
+// 1. Cole este código no seu componente React
+// 2. Abra o console do navegador (F12)
+// 3. Recarregue a página
+// 4. Verifique as mensagens de debug
+// 5. Me diga o que aparece no console!`;
+
+            baixarArquivo('debug-codigo-react.txt', codigoDebug);
+            mostrarOutput('✅ Código debug gerado!\n\n📋 Como usar:\n1. Cole o código no seu componente React\n2. Abra console (F12) na aplicação\n3. Recarregue a página\n4. Verifique mensagens de debug\n5. Me diga o que aparece no console!');
+        }
+
+        function gerarCodigoForcado() {
+            const codigoForcado = `// CÓDIGO COM CORES FORÇADAS - SOLUÇÃO DIRETA
+
+// Substitua sua função de estilo por esta versão que força as cores:
+
+const getFeatureStyleForcado = (feature, electoralData) => {
+    const municipioId = feature.properties.id;
+    
+    // Buscar eleito para este município
+    const eleito = electoralData?.find(d => 
+        d.eleito === true && d.codigo_municipio === municipioId
+    );
+    
+    // Definir cor baseada no partido (forçado)
+    let cor = '#cccccc'; // Cor padrão (cinza)
+    
+    if (eleito) {
+        const partido = eleito.partido;
+        
+        // Cores forçadas por partido
+        if (['PT', 'PSOL', 'PCdoB'].includes(partido)) {
+            cor = '#ff0000'; // Vermelho - Esquerda
+        } else if (['PSDB', 'CIDADANIA', 'PMB'].includes(partido)) {
+            cor = '#0000ff'; // Azul - Centro
+        } else if (['PL', 'PP', 'UNIÃO', 'REPUBLICANOS'].includes(partido)) {
+            cor = '#ff9800'; // Laranja - Centro-Direita
+        } else if (['MDB', 'PODE'].includes(partido)) {
+            cor = '#4caf50'; // Verde
+        } else {
+            cor = '#9c27b0'; // Roxo - Outros partidos
+        }
+    }
+    
+    // Retornar estilo FORÇADO
+    return {
+        fillColor: cor,
+        fillOpacity: 0.8,
+        weight: 2,
+        color: '#ffffff',
+        dashArray: '',
+        fillRule: 'evenodd'
+    };
+};
+
+// PARA LEAFLET REACT:
+// Use assim no seu componente:
+<GeoJSON 
+    data={geoData} 
+    style={(feature) => getFeatureStyleForcado(feature, electoralData)}
+    onEachFeature={(feature, layer) => {
+        const eleito = electoralData?.find(d => 
+            d.eleito === true && d.codigo_municipio === feature.properties.id
+        );
+        
+        if (eleito) {
+            layer.bindPopup(
+                '<strong>' + feature.properties.name + '</strong><br>' +
+                'Eleito: ' + eleito.nome_candidato + '<br>' +
+                'Partido: ' + eleito.partido
+            );
+        }
+    }}
+/>
+
+// PARA MAPBOX OU OUTROS:
+// Use a função getFeatureStyleForcado() adaptada para sua biblioteca de mapas`;
+
+            baixarArquivo('codigo-cores-forcadas.txt', codigoForcado);
+            mostrarOutput('⚡ Código com cores forçadas gerado!\n\n📋 Este código FORÇA as cores a aparecerem.\n\n🔧 Como usar:\n1. Substitua sua função de estilo atual\n2. Use a nova função getFeatureStyleForcado()\n3. As cores devem aparecer imediatamente!\n\n💡 Se ainda não funcionar, o problema está na biblioteca de mapas.');
+        }
+
+        function gerarArquivoConfig() {
+            const arquivoConfig = `{
+  "mapa": {
+    "centro": [-16.6864, -49.2643],
+    "zoom": 7,
+    "cores": {
+      "esquerda": "#ff0000",
+      "centro": "#0000ff", 
+      "centro_direita": "#ff9800",
+      "direita": "#9c27b0",
+      "padrao": "#cccccc"
+    },
+    "partidos": {
+      "PT": "esquerda",
+      "PSOL": "esquerda", 
+      "PCdoB": "esquerda",
+      "PSDB": "centro",
+      "CIDADANIA": "centro",
+      "PMB": "centro",
+      "PL": "centro_direita",
+      "PP": "centro_direita",
+      "UNIÃO": "centro_direita",
+      "REPUBLICANOS": "centro_direita",
+      "MDB": "centro_direita",
+      "PODE": "centro_direita"
+    }
+  },
+  "debug": {
+    "mostrar_logs": true,
+    "mostrar_municipios_sem_cor": true,
+    "mostrar_compatibilidade": true
+  }
+}`;
+
+            const codigoUsoConfig = `// COMO USAR O ARQUIVO DE CONFIGURAÇÃO
+
+// 1. Salve o arquivo como: public/config/mapa-config.json
+
+// 2. Carregue a configuração no seu componente:
+const [config, setConfig] = useState(null);
+
+useEffect(() => {
+    fetch('/config/mapa-config.json')
+        .then(response => response.json())
+        .then(configData => setConfig(configData))
+        .catch(error => console.error('Erro ao carregar config:', error));
+}, []);
+
+// 3. Use a configuração para aplicar cores:
+const getFeatureStyleComConfig = (feature, electoralData, config) => {
+    if (!config) return { fillColor: '#cccccc', fillOpacity: 0.5 };
+    
+    const eleito = electoralData?.find(d => 
+        d.eleito === true && d.codigo_municipio === feature.properties.id
+    );
+    
+    let cor = config.mapa.cores.padrao;
+    
+    if (eleito && config.mapa.partidos[eleito.partido]) {
+        const ideologia = config.mapa.partidos[eleito.partido];
+        cor = config.mapa.cores[ideologia] || config.mapa.cores.padrao;
+    }
+    
+    if (config.debug.mostrar_logs) {
+        console.log('Município:', feature.properties.name, 'Cor:', cor);
+    }
+    
+    return {
+        fillColor: cor,
+        fillOpacity: 0.7,
+        weight: 1,
+        color: 'white'
+    };
+};
+
+// 4. Use no componente:
+<GeoJSON 
+    data={geoData} 
+    style={(feature) => getFeatureStyleComConfig(feature, electoralData, config)}
+/>`;
+
+            baixarArquivo('mapa-config.json', arquivoConfig);
+            baixarArquivo('como-usar-config.txt', codigoUsoConfig);
+            
+            mostrarOutput('⚙️ Arquivo de configuração gerado!\n\n📋 Arquivos criados:\n• mapa-config.json (configurações)\n• como-usar-config.txt (instruções)\n\n🔧 Esta solução permite:\n• Cores configuráveis\n• Debug ativado/desativado\n• Fácil manutenção\n• Adição de novos partidos');
+        }
+
+        function baixarArquivo(nome, conteudo) {
+            const blob = new Blob([conteudo], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = nome;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

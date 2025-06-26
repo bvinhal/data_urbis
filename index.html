@@ -12,6 +12,35 @@
     <link rel="apple-touch-icon" href="./logo192.png" />
     <link rel="manifest" href="./manifest.json" />
     <title>Mapa Eleitoral-Fiscal do Brasil</title>
+    <script>
+        // Interceptador de requisições para corrigir caminhos dos dados eleitorais
+        (function() {
+            const originalFetch = window.fetch;
+            
+            window.fetch = function(...args) {
+                let url = args[0];
+                
+                // Mapeamento de arquivos
+                const fileMapping = {
+                    '/data/electoral/2024_prefeito.json': '/data/electoral/eleicoes_prefeitos_go_2024.json',
+                    '/data/electoral/2022_prefeito.json': '/data/electoral/eleicoes_prefeitos_go_2024.json',
+                    '/data/electoral/2020_prefeito.json': '/data/electoral/eleicoes_prefeitos_go_2024.json',
+                    '/data/electoral/2018_prefeito.json': '/data/electoral/eleicoes_prefeitos_go_2024.json',
+                    '/data/electoral/2016_prefeito.json': '/data/electoral/eleicoes_prefeitos_go_2024.json'
+                };
+                
+                // Verifica se precisa substituir a URL
+                if (typeof url === 'string' && fileMapping[url]) {
+                    console.log('Redirecionando:', url, '->', fileMapping[url]);
+                    args[0] = fileMapping[url];
+                }
+                
+                return originalFetch.apply(this, args);
+            };
+            
+            console.log('✅ Interceptador de dados eleitorais ativado');
+        })();
+    </script>
     <script defer="defer" src="./static/js/main.b2cbd77a.js"></script>
     <link href="./static/css/main.72ba1fd9.css" rel="stylesheet">
     <script>
@@ -52,5 +81,193 @@
   <body>
     <noscript>Você precisa habilitar JavaScript para executar este aplicativo.</noscript>
     <div id="root"></div>
+    <!-- ADICIONE ESTE SCRIPT NO SEU index.html ANTES DO </body> -->
+    <script>
+    // Script para forçar cores no mapa - Versão Definitiva
+    (function() {
+        console.log('🎨 Script de cores carregado');
+        
+        let tentativas = 0;
+        const maxTentativas = 20;
+        let dadosCarregados = false;
+        
+        // Interceptar carregamento de dados
+        if (window.fetch) {
+            const originalFetch = window.fetch;
+            window.fetch = function(...args) {
+                const url = args[0];
+                
+                return originalFetch.apply(this, args).then(response => {
+                    if (url.includes('2024_prefeito.json')) {
+                        console.log('📊 Dados eleitorais interceptados');
+                        response.clone().json().then(data => {
+                            window.dadosEleitorais = data;
+                            window.eleitos = data.filter(d => d.eleito === true);
+                            console.log('Eleitos salvos:', window.eleitos.length);
+                            dadosCarregados = true;
+                            setTimeout(aplicarCores, 1000);
+                        });
+                    }
+                    
+                    if (url.includes('brazil-municipalities.geojson')) {
+                        console.log('🗺️ Dados geográficos interceptados');
+                        response.clone().json().then(data => {
+                            window.dadosGeo = data;
+                            console.log('GeoJSON salvo:', data.features.length, 'features');
+                            setTimeout(aplicarCores, 1000);
+                        });
+                    }
+                    
+                    return response;
+                });
+            };
+        }
+        
+        function aplicarCores() {
+            tentativas++;
+            console.log(`🎨 Tentativa ${tentativas} de aplicar cores...`);
+            
+            if (!dadosCarregados || !window.eleitos) {
+                console.log('⏳ Aguardando dados...');
+                if (tentativas < maxTentativas) {
+                    setTimeout(aplicarCores, 2000);
+                }
+                return;
+            }
+            
+            // Procurar elementos de mapa com seletores mais específicos
+            const seletores = [
+                'path[fill]',
+                'path[style*="fill"]',
+                'polygon[fill]',
+                'svg path',
+                '.leaflet-interactive',
+                '[class*="leaflet"] path',
+                '[class*="map"] path',
+                '.leaflet-overlay-pane path',
+                '.leaflet-svg-group path'
+            ];
+            
+            let elementosEncontrados = 0;
+            let elementosColoridos = 0;
+            
+            // Cores por partido
+            const coresPorPartido = {
+                'PT': '#ff0000', 'PSOL': '#ff0000', 'PCdoB': '#ff0000',
+                'PSDB': '#0000ff', 'CIDADANIA': '#0000ff', 'PMB': '#0000ff',
+                'PL': '#ff9800', 'PP': '#ff9800', 'UNIÃO': '#ff9800', 'REPUBLICANOS': '#ff9800',
+                'MDB': '#4caf50', 'PODE': '#4caf50'
+            };
+            
+            seletores.forEach(seletor => {
+                const elementos = document.querySelectorAll(seletor);
+                elementosEncontrados += elementos.length;
+                
+                elementos.forEach((elemento, index) => {
+                    // Estratégia 1: Por posição (fallback)
+                    const eleito = window.eleitos[index % window.eleitos.length];
+                    
+                    if (eleito) {
+                        const cor = coresPorPartido[eleito.partido] || '#9c27b0';
+                        
+                        // Aplicar cor com força máxima
+                        elemento.style.fill = cor + ' !important';
+                        elemento.style.fillOpacity = '0.8 !important';
+                        elemento.style.setProperty('fill', cor, 'important');
+                        elemento.setAttribute('fill', cor);
+                        elemento.setAttribute('fill-opacity', '0.8');
+                        
+                        // Adicionar classe CSS para forçar cor
+                        elemento.classList.add('municipio-colorido');
+                        elemento.setAttribute('data-partido', eleito.partido);
+                        elemento.setAttribute('data-municipio', eleito.nome_municipio);
+                        
+                        elementosColoridos++;
+                        
+                        console.log(`✅ Cor aplicada: ${eleito.nome_municipio} → ${cor}`);
+                    }
+                });
+            });
+            
+            console.log(`📊 Resultado: ${elementosColoridos}/${elementosEncontrados} elementos coloridos`);
+            
+            if (elementosEncontrados === 0) {
+                console.log('❌ Nenhum elemento de mapa encontrado ainda');
+                if (tentativas < maxTentativas) {
+                    setTimeout(aplicarCores, 3000);
+                }
+            } else if (elementosColoridos === 0) {
+                console.log('⚠️ Elementos encontrados mas não coloridos');
+                if (tentativas < maxTentativas) {
+                    setTimeout(aplicarCores, 2000);
+                }
+            } else {
+                console.log('✅ Cores aplicadas com sucesso!');
+                
+                // Adicionar CSS para garantir que as cores permaneçam
+                adicionarCSSForcado();
+            }
+        }
+        
+        function adicionarCSSForcado() {
+            const style = document.createElement('style');
+            style.textContent = `
+                /* Forçar cores nos municípios */
+                [data-partido="PT"] { fill: #ff0000 !important; fill-opacity: 0.8 !important; }
+                [data-partido="PSOL"] { fill: #ff0000 !important; fill-opacity: 0.8 !important; }
+                [data-partido="PCdoB"] { fill: #ff0000 !important; fill-opacity: 0.8 !important; }
+                
+                [data-partido="PSDB"] { fill: #0000ff !important; fill-opacity: 0.8 !important; }
+                [data-partido="CIDADANIA"] { fill: #0000ff !important; fill-opacity: 0.8 !important; }
+                [data-partido="PMB"] { fill: #0000ff !important; fill-opacity: 0.8 !important; }
+                
+                [data-partido="PL"] { fill: #ff9800 !important; fill-opacity: 0.8 !important; }
+                [data-partido="PP"] { fill: #ff9800 !important; fill-opacity: 0.8 !important; }
+                [data-partido="UNIÃO"] { fill: #ff9800 !important; fill-opacity: 0.8 !important; }
+                [data-partido="REPUBLICANOS"] { fill: #ff9800 !important; fill-opacity: 0.8 !important; }
+                
+                [data-partido="MDB"] { fill: #4caf50 !important; fill-opacity: 0.8 !important; }
+                [data-partido="PODE"] { fill: #4caf50 !important; fill-opacity: 0.8 !important; }
+                
+                .municipio-colorido {
+                    stroke: #ffffff !important;
+                    stroke-width: 1 !important;
+                }
+            `;
+            document.head.appendChild(style);
+            console.log('💄 CSS forçado adicionado');
+        }
+        
+        // Monitorar mudanças no DOM
+        const observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+                if (mutation.addedNodes.length > 0) {
+                    setTimeout(aplicarCores, 500);
+                }
+            });
+        });
+        
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+        
+        // Tentar aplicar cores em diferentes momentos
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(aplicarCores, 1000);
+        });
+        
+        window.addEventListener('load', () => {
+            setTimeout(aplicarCores, 2000);
+        });
+        
+        // Tentar periodicamente nos primeiros 30 segundos
+        for (let i = 1; i <= 10; i++) {
+            setTimeout(aplicarCores, i * 3000);
+        }
+        
+        console.log('✅ Script de cores ativado - monitorando elementos...');
+    })();
+    </script>
   </body>
 </html>

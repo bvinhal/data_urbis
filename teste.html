@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Teste Rapido</title>
+    <style>
+        body { font-family: Arial; margin: 20px; background: #f0f0f0; }
+        .resultado { background: #fff; padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .sucesso { background: #d4edda; color: #155724; }
+        .erro { background: #f8d7da; color: #721c24; }
+        button { padding: 10px 20px; font-size: 16px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Teste Rapido do Mapa</h1>
+    <button onclick="testarTudo()">CLIQUE AQUI PARA TESTAR</button>
+    <div id="resultados"></div>
+
+    <script>
+        function mostrar(mensagem, tipo) {
+            const div = document.createElement('div');
+            div.className = 'resultado ' + (tipo || '');
+            div.textContent = mensagem;
+            document.getElementById('resultados').appendChild(div);
+        }
+
+        async function testarTudo() {
+            document.getElementById('resultados').innerHTML = '';
+            mostrar('Iniciando testes...', '');
+            
+            // Teste 1: Dados eleitorais
+            try {
+                mostrar('Testando dados eleitorais...', '');
+                const response1 = await fetch('./data/electoral/2024_prefeito.json');
+                if (response1.ok) {
+                    const dados1 = await response1.json();
+                    mostrar('SUCESSO: ' + dados1.length + ' registros eleitorais carregados', 'sucesso');
+                    
+                    // Mostrar alguns códigos
+                    const codigos = [...new Set(dados1.map(d => d.codigo_municipio))];
+                    mostrar('Primeiros códigos: ' + codigos.slice(0, 3).join(', '), '');
+                } else {
+                    mostrar('ERRO: Arquivo eleitoral não encontrado (erro ' + response1.status + ')', 'erro');
+                }
+            } catch (error) {
+                mostrar('ERRO: Falha ao carregar dados eleitorais - ' + error.message, 'erro');
+            }
+
+            // Teste 2: Dados geográficos
+            try {
+                mostrar('Testando dados geograficos...', '');
+                const response2 = await fetch('./data/geo/brazil-municipalities.geojson');
+                if (response2.ok) {
+                    const dados2 = await response2.json();
+                    mostrar('SUCESSO: ' + dados2.features.length + ' municipios geograficos carregados', 'sucesso');
+                    
+                    // Mostrar alguns códigos
+                    const codigosGeo = dados2.features.map(f => f.properties.id);
+                    mostrar('Primeiros códigos geo: ' + codigosGeo.slice(0, 3).join(', '), '');
+                    
+                    // Verificar coordenadas
+                    const coords = dados2.features[0].geometry.coordinates[0][0];
+                    mostrar('Coordenadas exemplo: [' + coords[0] + ', ' + coords[1] + ']', '');
+                    
+                    if (coords[0] < -60 || coords[0] > -40 || coords[1] < -25 || coords[1] > -5) {
+                        mostrar('AVISO: Coordenadas podem estar fora do Brasil', 'erro');
+                    } else {
+                        mostrar('Coordenadas parecem validas para o Brasil', 'sucesso');
+                    }
+                } else {
+                    mostrar('ERRO: Arquivo geografico não encontrado (erro ' + response2.status + ')', 'erro');
+                }
+            } catch (error) {
+                mostrar('ERRO: Falha ao carregar dados geograficos - ' + error.message, 'erro');
+            }
+
+            // Teste 3: Compatibilidade (se ambos carregaram)
+            try {
+                const [resp1, resp2] = await Promise.all([
+                    fetch('./data/electoral/2024_prefeito.json'),
+                    fetch('./data/geo/brazil-municipalities.geojson')
+                ]);
+                
+                if (resp1.ok && resp2.ok) {
+                    const [dados1, dados2] = await Promise.all([resp1.json(), resp2.json()]);
+                    
+                    const codigosEleitorais = [...new Set(dados1.map(d => d.codigo_municipio))];
+                    const codigosGeo = dados2.features.map(f => f.properties.id);
+                    const matches = codigosEleitorais.filter(c => codigosGeo.includes(c));
+                    
+                    mostrar('COMPATIBILIDADE:', '');
+                    mostrar('Codigos eleitorais: ' + codigosEleitorais.length, '');
+                    mostrar('Codigos geograficos: ' + codigosGeo.length, '');
+                    mostrar('Codigos compativeis: ' + matches.length, matches.length > 0 ? 'sucesso' : 'erro');
+                    
+                    if (matches.length === 0) {
+                        mostrar('PROBLEMA ENCONTRADO: Nenhum codigo compativel!', 'erro');
+                        mostrar('Exemplo eleitoral: ' + codigosEleitorais[0], 'erro');
+                        mostrar('Exemplo geografico: ' + codigosGeo[0], 'erro');
+                        mostrar('SOLUCAO: Precisa corrigir os codigos no GeoJSON', 'erro');
+                    } else {
+                        const percentual = (matches.length / codigosEleitorais.length * 100).toFixed(1);
+                        mostrar('Compatibilidade: ' + percentual + '%', 'sucesso');
+                    }
+                }
+            } catch (error) {
+                mostrar('Erro no teste de compatibilidade: ' + error.message, 'erro');
+            }
+            
+            mostrar('Teste concluido!', '');
+        }
+    </script>
+</body>
+</html>

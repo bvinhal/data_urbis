@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor IBGE → Seus Códigos</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border-left: 4px solid #FFD700;
+        }
+        .step h3 {
+            color: #FFD700;
+            margin-top: 0;
+        }
+        .file-input {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            margin: 20px 0;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .file-input:hover {
+            border-color: rgba(255, 255, 255, 0.6);
+            background: rgba(255, 255, 255, 0.2);
+        }
+        .file-input.loaded {
+            border-color: #4CAF50;
+            background: rgba(76, 175, 80, 0.2);
+        }
+        input[type="file"] {
+            display: none;
+        }
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        button:disabled {
+            background: #666;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .output {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .success { color: #4CAF50; font-weight: bold; }
+        .error { color: #F44336; font-weight: bold; }
+        .warning { color: #FF9800; font-weight: bold; }
+        .info { color: #2196F3; }
+        .highlight { color: #FFD700; font-weight: bold; }
+        .progress {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 10px;
+            height: 20px;
+            overflow: hidden;
+            margin: 15px 0;
+        }
+        .progress-bar {
+            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            height: 100%;
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+        .mapping-table {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            padding: 15px;
+            margin: 15px 0;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .mapping-table table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        .mapping-table th,
+        .mapping-table td {
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            padding: 8px;
+            text-align: left;
+            font-size: 12px;
+        }
+        .mapping-table th {
+            background: rgba(255, 255, 255, 0.1);
+            font-weight: bold;
+            position: sticky;
+            top: 0;
+        }
+        .match { background: rgba(76, 175, 80, 0.2); }
+        .no-match { background: rgba(244, 67, 54, 0.2); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔄 Conversor IBGE → Seus Códigos</h1>
+        
+        <div class="step">
+            <h3>📋 Passo 1: Carregue os Arquivos</h3>
+            <p>Carregue primeiro seus dados eleitorais, depois o arquivo GeoJSON do IBGE:</p>
+            
+            <div class="file-input" id="electoralInput" onclick="document.getElementById('electoralFile').click()">
+                <input type="file" id="electoralFile" accept=".json" onchange="carregarDadosEleitorais(event)">
+                📊 Clique para carregar: <strong>2024_prefeito.json</strong><br>
+                <small>Seus dados eleitorais</small>
+            </div>
+            
+            <div class="file-input" id="ibgeInput" onclick="document.getElementById('ibgeFile').click()">
+                <input type="file" id="ibgeFile" accept=".geojson,.json" onchange="carregarDadosIBGE(event)">
+                🗺️ Clique para carregar: <strong>municipios-goias-ibge.geojson</strong><br>
+                <small>Arquivo baixado do IBGE</small>
+            </div>
+        </div>
+
+        <div class="step">
+            <h3>🔍 Passo 2: Análise e Mapeamento</h3>
+            <button onclick="analisarCompatibilidade()" id="analyzeBtn" disabled>
+                🔍 Analisar Compatibilidade
+            </button>
+            <div id="analysisOutput" class="output" style="display: none;"></div>
+            <div id="mappingTable" class="mapping-table" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>🛠️ Passo 3: Conversão Automática</h3>
+            <button onclick="converterAutomaticamente()" id="convertBtn" disabled>
+                🚀 Converter Automaticamente
+            </button>
+            <div class="progress" style="display: none;" id="progress">
+                <div class="progress-bar" id="progressBar"></div>
+            </div>
+            <div id="conversionOutput" class="output" style="display: none;"></div>
+        </div>
+
+        <div class="step">
+            <h3>✅ Passo 4: Download do Resultado</h3>
+            <p>Após a conversão, baixe o arquivo corrigido e substitua em sua aplicação.</p>
+            <button onclick="baixarResultado()" id="downloadBtn" disabled>
+                💾 Baixar GeoJSON Convertido
+            </button>
+        </div>
+    </div>
+
+    <script>
+        let dadosEleitorais = null;
+        let dadosIBGE = null;
+        let mapeamento = {};
+        let geoJSONConvertido = null;
+
+        function log(message, type = 'info', outputId = 'analysisOutput') {
+            const output = document.getElementById(outputId);
+            if (output.style.display === 'none') output.style.display = 'block';
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const className = type;
+            output.innerHTML += `<span class="${className}">[${timestamp}] ${message}</span>\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function updateProgress(percent) {
+            const progress = document.getElementById('progress');
+            const progressBar = document.getElementById('progressBar');
+            progress.style.display = 'block';
+            progressBar.style.width = percent + '%';
+        }
+
+        function carregarDadosEleitorais(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    dadosEleitorais = JSON.parse(e.target.result);
+                    document.getElementById('electoralInput').classList.add('loaded');
+                    document.getElementById('electoralInput').innerHTML = `
+                        ✅ <strong>Dados eleitorais carregados</strong><br>
+                        <small>${dadosEleitorais.length} registros encontrados</small>
+                    `;
+                    verificarSePodemAnalisar();
+                } catch (error) {
+                    log(`❌ Erro ao ler dados eleitorais: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function carregarDadosIBGE(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    dadosIBGE = JSON.parse(e.target.result);
+                    document.getElementById('ibgeInput').classList.add('loaded');
+                    document.getElementById('ibgeInput').innerHTML = `
+                        ✅ <strong>Dados IBGE carregados</strong><br>
+                        <small>${dadosIBGE.features.length} municípios encontrados</small>
+                    `;
+                    verificarSePodemAnalisar();
+                } catch (error) {
+                    log(`❌ Erro ao ler dados IBGE: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function verificarSePodemAnalisar() {
+            if (dadosEleitorais && dadosIBGE) {
+                document.getElementById('analyzeBtn').disabled = false;
+            }
+        }
+
+        function analisarCompatibilidade() {
+            log('🔍 Iniciando análise de compatibilidade...', 'highlight');
+            log('', 'info');
+
+            // Extrair códigos e nomes dos dados eleitorais
+            const municipiosEleitorais = [...new Set(dadosEleitorais.map(d => ({
+                codigo: d.codigo_municipio,
+                nome: d.nome_municipio.toUpperCase().trim()
+            })))];
+
+            // Extrair dados do IBGE
+            const municipiosIBGE = dadosIBGE.features.map(f => ({
+                codigoIBGE: f.properties.CD_MUN || f.properties.id || f.properties.codigo,
+                nome: (f.properties.NM_MUN || f.properties.name || f.properties.nome || '').toUpperCase().trim()
+            }));
+
+            log(`📊 Dados eleitorais: ${municipiosEleitorais.length} municípios únicos`, 'info');
+            log(`🗺️ Dados IBGE: ${municipiosIBGE.length} municípios`, 'info');
+            log('', 'info');
+
+            // Tentar fazer mapeamento por nome
+            log('🔄 Criando mapeamento por nome...', 'highlight');
+            
+            mapeamento = {};
+            let matchesPorNome = 0;
+            let semMatch = [];
+
+            municipiosEleitorais.forEach(eleitoral => {
+                const nomeEleitoral = limparNome(eleitoral.nome);
+                
+                // Procurar por nome exato
+                let ibgeMatch = municipiosIBGE.find(ibge => 
+                    limparNome(ibge.nome) === nomeEleitoral
+                );
+
+                // Se não encontrou, tentar variações
+                if (!ibgeMatch) {
+                    ibgeMatch = municipiosIBGE.find(ibge => {
+                        const nomeIBGE = limparNome(ibge.nome);
+                        return nomeIBGE.includes(nomeEleitoral) || nomeEleitoral.includes(nomeIBGE);
+                    });
+                }
+
+                if (ibgeMatch) {
+                    mapeamento[eleitoral.codigo] = {
+                        codigoIBGE: ibgeMatch.codigoIBGE,
+                        nomeEleitoral: eleitoral.nome,
+                        nomeIBGE: ibgeMatch.nome,
+                        match: true
+                    };
+                    matchesPorNome++;
+                } else {
+                    mapeamento[eleitoral.codigo] = {
+                        codigoIBGE: null,
+                        nomeEleitoral: eleitoral.nome,
+                        nomeIBGE: null,
+                        match: false
+                    };
+                    semMatch.push(eleitoral.nome);
+                }
+            });
+
+            const percentualMatch = ((matchesPorNome / municipiosEleitorais.length) * 100).toFixed(1);
+            
+            log(`✅ Matches encontrados: ${matchesPorNome}/${municipiosEleitorais.length} (${percentualMatch}%)`, 'success');
+            
+            if (semMatch.length > 0) {
+                log(`❌ Sem match: ${semMatch.length} municípios`, 'warning');
+                log(`📝 Exemplos: ${semMatch.slice(0, 5).join(', ')}`, 'warning');
+            }
+
+            // Exibir tabela de mapeamento
+            exibirTabelaMapeamento();
+
+            // Habilitar conversão se houver matches suficientes
+            if (matchesPorNome > municipiosEleitorais.length * 0.5) {
+                document.getElementById('convertBtn').disabled = false;
+                log('', 'info');
+                log('✅ Mapeamento suficiente para conversão!', 'success');
+            } else {
+                log('', 'info');
+                log('⚠️ Poucos matches encontrados. Verifique os nomes dos municípios.', 'warning');
+            }
+        }
+
+        function limparNome(nome) {
+            return nome
+                .replace(/[ÁÀÂÃ]/g, 'A')
+                .replace(/[ÉÈÊ]/g, 'E')
+                .replace(/[ÍÌÎ]/g, 'I')
+                .replace(/[ÓÒÔÕ]/g, 'O')
+                .replace(/[ÚÙÛ]/g, 'U')
+                .replace(/Ç/g, 'C')
+                .replace(/[^A-Z0-9\s]/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+        }
+
+        function exibirTabelaMapeamento() {
+            const tableDiv = document.getElementById('mappingTable');
+            tableDiv.style.display = 'block';
+
+            let html = `
+                <h4>📋 Tabela de Mapeamento</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Código Eleitoral</th>
+                            <th>Nome Eleitoral</th>
+                            <th>Código IBGE</th>
+                            <th>Nome IBGE</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            Object.entries(mapeamento).forEach(([codigoEleitoral, dados]) => {
+                const cssClass = dados.match ? 'match' : 'no-match';
+                const status = dados.match ? '✅' : '❌';
+                
+                html += `
+                    <tr class="${cssClass}">
+                        <td>${codigoEleitoral}</td>
+                        <td>${dados.nomeEleitoral}</td>
+                        <td>${dados.codigoIBGE || '-'}</td>
+                        <td>${dados.nomeIBGE || '-'}</td>
+                        <td>${status}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            tableDiv.innerHTML = html;
+        }
+
+        function converterAutomaticamente() {
+            log('🚀 Iniciando conversão automática...', 'highlight', 'conversionOutput');
+            updateProgress(0);
+
+            // Filtrar apenas features do IBGE que têm match
+            const featuresConvertidas = [];
+            const totalParaConverter = Object.keys(mapeamento).filter(k => mapeamento[k].match).length;
+            let convertidos = 0;
+
+            Object.entries(mapeamento).forEach(([codigoEleitoral, dados]) => {
+                if (dados.match) {
+                    // Encontrar a feature correspondente no IBGE
+                    const featureIBGE = dadosIBGE.features.find(f => {
+                        const codigoIBGE = f.properties.CD_MUN || f.properties.id || f.properties.codigo;
+                        return codigoIBGE === dados.codigoIBGE;
+                    });
+
+                    if (featureIBGE) {
+                        // Criar nova feature com código eleitoral
+                        const novaFeature = {
+                            type: 'Feature',
+                            properties: {
+                                id: codigoEleitoral, // Usar código eleitoral
+                                name: dados.nomeEleitoral,
+                                codigo_ibge: dados.codigoIBGE, // Manter referência IBGE
+                                estado: 'GO',
+                                regiao: 'Centro-Oeste'
+                            },
+                            geometry: featureIBGE.geometry // Usar geometria original do IBGE
+                        };
+
+                        featuresConvertidas.push(novaFeature);
+                        convertidos++;
+                        
+                        const progresso = (convertidos / totalParaConverter) * 100;
+                        updateProgress(progresso);
+                        
+                        if (convertidos <= 5) {
+                            log(`✅ Convertido: ${codigoEleitoral} → ${dados.nomeEleitoral}`, 'success', 'conversionOutput');
+                        }
+                    }
+                }
+            });
+
+            geoJSONConvertido = {
+                type: 'FeatureCollection',
+                features: featuresConvertidas
+            };
+
+            log('', 'info', 'conversionOutput');
+            log(`✅ Conversão concluída!`, 'success', 'conversionOutput');
+            log(`📊 ${featuresConvertidas.length} municípios convertidos`, 'info', 'conversionOutput');
+            log(`🗺️ Divisas reais do IBGE preservadas`, 'success', 'conversionOutput');
+            log(`🔄 Códigos compatíveis com seus dados eleitorais`, 'success', 'conversionOutput');
+
+            document.getElementById('downloadBtn').disabled = false;
+            updateProgress(100);
+        }
+
+        function baixarResultado() {
+            if (!geoJSONConvertido) {
+                alert('Execute a conversão primeiro!');
+                return;
+            }
+
+            const blob = new Blob([JSON.stringify(geoJSONConvertido, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'municipios-goias-divisas-reais.geojson';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log('💾 Arquivo baixado com sucesso!', 'success', 'conversionOutput');
+            log('', 'info', 'conversionOutput');
+            log('📁 PRÓXIMOS PASSOS:', 'highlight', 'conversionOutput');
+            log('1. Substitua: data/geo/brazil-municipalities.geojson', 'warning', 'conversionOutput');
+            log('2. Recarregue sua aplicação', 'warning', 'conversionOutput');
+            log('3. Execute o teste - deve ter 100% compatibilidade', 'success', 'conversionOutput');
+            log('4. 🎉 Agora verá as divisas reais dos municípios!', 'success', 'conversionOutput');
+        }
+    </script>
+</body>
+</html>

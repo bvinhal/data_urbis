@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Localizar Arquivo Eleitoral</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 900px;
+            margin: 30px auto;
+            padding: 20px;
+        }
+        .test-result {
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+        }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        .info { background-color: #d1ecf1; border-color: #bee5eb; }
+        pre {
+            background-color: #f5f5f5;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-size: 12px;
+        }
+        .data-preview {
+            max-height: 400px;
+            overflow-y: auto;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔍 Localizando Arquivo Eleitoral</h1>
+    
+    <div id="results"></div>
+
+    <script>
+        const possiblePaths = [
+            '/eleicoes_prefeitos_go_2024.json',
+            '/data/eleicoes_prefeitos_go_2024.json',
+            '/data/electoral/eleicoes_prefeitos_go_2024.json',
+            './eleicoes_prefeitos_go_2024.json',
+            '../eleicoes_prefeitos_go_2024.json'
+        ];
+
+        const resultsDiv = document.getElementById('results');
+
+        async function findFile() {
+            resultsDiv.innerHTML = '<h2>Procurando arquivo...</h2>';
+            
+            for (const path of possiblePaths) {
+                const testDiv = document.createElement('div');
+                testDiv.className = 'test-result';
+                
+                try {
+                    const response = await fetch(path);
+                    if (response.ok) {
+                        const data = await response.json();
+                        testDiv.className = 'test-result success';
+                        testDiv.innerHTML = `
+                            <h3>✅ Arquivo encontrado em: ${path}</h3>
+                            <p><strong>Tamanho:</strong> ${JSON.stringify(data).length} caracteres</p>
+                            <p><strong>Tipo de dados:</strong> ${Array.isArray(data) ? `Array com ${data.length} registros` : 'Objeto'}</p>
+                        `;
+                        
+                        // Mostra preview dos dados
+                        if (Array.isArray(data) && data.length > 0) {
+                            testDiv.innerHTML += `
+                                <h4>Preview do primeiro registro:</h4>
+                                <div class="data-preview">
+                                    <pre>${JSON.stringify(data[0], null, 2)}</pre>
+                                </div>
+                            `;
+                            
+                            // Analisa a estrutura
+                            const campos = Object.keys(data[0]);
+                            testDiv.innerHTML += `
+                                <h4>Campos encontrados:</h4>
+                                <ul>
+                                    ${campos.map(campo => `<li><code>${campo}</code></li>`).join('')}
+                                </ul>
+                            `;
+                            
+                            // Mostra alguns municípios
+                            const municipios = [...new Set(data.map(d => d.municipio || d.nome_municipio || d.cidade))].slice(0, 5);
+                            testDiv.innerHTML += `
+                                <h4>Alguns municípios encontrados:</h4>
+                                <ul>
+                                    ${municipios.map(m => `<li>${m}</li>`).join('')}
+                                </ul>
+                            `;
+                        }
+                        
+                        // Código para corrigir
+                        testDiv.innerHTML += `
+                            <div class="test-result info" style="margin-top: 20px;">
+                                <h4>📝 Correção necessária no código:</h4>
+                                <p>Modifique a função <code>loadElectoralData</code> para usar este caminho:</p>
+                                <pre>const loadElectoralData = async () => {
+    try {
+        const response = await fetch('${path}');
+        if (!response.ok) throw new Error('Erro ao carregar dados');
+        const data = await response.json();
+        // Processar dados...
+    } catch (error) {
+        console.error('Erro:', error);
+    }
+};</pre>
+                            </div>
+                        `;
+                        
+                        resultsDiv.appendChild(testDiv);
+                        return; // Arquivo encontrado, para a busca
+                    }
+                } catch (error) {
+                    testDiv.className = 'test-result error';
+                    testDiv.innerHTML = `❌ ${path} - ${error.message}`;
+                }
+                
+                resultsDiv.appendChild(testDiv);
+            }
+            
+            // Se chegou aqui, não encontrou o arquivo
+            resultsDiv.innerHTML += `
+                <div class="test-result error">
+                    <h3>⚠️ Arquivo não encontrado!</h3>
+                    <p>O arquivo <code>eleicoes_prefeitos_go_2024.json</code> não foi encontrado nos caminhos testados.</p>
+                    <p><strong>Verifique:</strong></p>
+                    <ul>
+                        <li>Se o arquivo está na pasta correta</li>
+                        <li>Se o nome está exatamente correto (incluindo maiúsculas/minúsculas)</li>
+                        <li>Se o Live Server está rodando na pasta raiz do projeto</li>
+                    </ul>
+                </div>
+            `;
+        }
+
+        // Executa a busca
+        findFile();
+    </script>
+</body>
+</html>

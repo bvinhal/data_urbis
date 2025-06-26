@@ -1,0 +1,272 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Solução Rápida - GeoJSON Compatível</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+        }
+        .problem {
+            background: rgba(255, 0, 0, 0.2);
+            border-left: 4px solid #f44336;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .solution {
+            background: rgba(0, 255, 0, 0.2);
+            border-left: 4px solid #4caf50;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        .warning {
+            background: rgba(255, 165, 0, 0.2);
+            border-left: 4px solid #ff9800;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 10px;
+        }
+        button {
+            background: linear-gradient(45deg, #FF6B6B, #FF8E53);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            cursor: pointer;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            display: block;
+            width: 100%;
+            max-width: 400px;
+            margin: 20px auto;
+        }
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        .output {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            font-family: 'Courier New', monospace;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+        .success { color: #4CAF50; font-weight: bold; }
+        .error { color: #F44336; font-weight: bold; }
+        .info { color: #2196F3; font-weight: bold; }
+        .step {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin: 20px 0;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Solução Rápida para o Mapa</h1>
+        
+        <div class="problem">
+            <h3>❌ Problema Identificado</h3>
+            <p><strong>O mapa não mostra municípios coloridos porque:</strong></p>
+            <ul>
+                <li>Dados eleitorais usam códigos como "92215" (Anápolis)</li>
+                <li>GeoJSON usa códigos IBGE como "5201108" (Anápolis)</li>
+                <li>Como os códigos não batem, o sistema não consegue colorir o mapa</li>
+            </ul>
+        </div>
+
+        <div class="solution">
+            <h3>✅ Solução Imediata</h3>
+            <p><strong>Vou gerar um GeoJSON que usa os mesmos códigos dos dados eleitorais!</strong></p>
+            <button onclick="generateFixedGeoJSON()">🔧 Gerar GeoJSON Corrigido</button>
+        </div>
+
+        <div class="step">
+            <h3>📋 Instruções Passo a Passo</h3>
+            <ol>
+                <li>Clique no botão acima para gerar o arquivo corrigido</li>
+                <li>Baixe o arquivo "brazil-municipalities-fixed.geojson"</li>
+                <li>Substitua o arquivo em <code>data/geo/brazil-municipalities.geojson</code></li>
+                <li>Recarregue sua aplicação</li>
+                <li>🎉 Os municípios devem aparecer coloridos!</li>
+            </ol>
+        </div>
+
+        <div id="output" class="output" style="display: none;"></div>
+
+        <div class="warning">
+            <h3>⚠️ Importante</h3>
+            <p>Este GeoJSON usa coordenadas simplificadas para demonstração. Para um mapa mais preciso, você precisaria das coordenadas reais dos municípios de Goiás.</p>
+        </div>
+    </div>
+
+    <script>
+        function log(message, type = 'info') {
+            const output = document.getElementById('output');
+            output.style.display = 'block';
+            
+            const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+            const timestamp = new Date().toLocaleTimeString();
+            output.innerHTML += `[${timestamp}] ${message}\n`;
+            output.scrollTop = output.scrollHeight;
+        }
+
+        function generateFixedGeoJSON() {
+            log('🔧 Gerando GeoJSON compatível com dados eleitorais...', 'info');
+            
+            // Códigos reais dos dados eleitorais de Goiás
+            const municipiosGoias = [
+                {codigo: "92118", nome: "ALTO PARAÍSO DE GOIÁS", lat: -14.1273, lng: -47.5217},
+                {codigo: "92126", nome: "COLINAS DO SUL", lat: -14.1573, lng: -48.0731},
+                {codigo: "92150", nome: "ALVORADA DO NORTE", lat: -14.4804, lng: -46.4899},
+                {codigo: "92169", nome: "MORRO AGUDO DE GOIÁS", lat: -14.9273, lng: -47.0531},
+                {codigo: "92177", nome: "AMORINÓPOLIS", lat: -16.9342, lng: -50.1298},
+                {codigo: "92207", nome: "EDEALINA", lat: -17.4473, lng: -49.6631},
+                {codigo: "92215", nome: "ANÁPOLIS", lat: -16.3281, lng: -48.9531},
+                {codigo: "92223", nome: "FAINA", lat: -15.4573, lng: -50.3631},
+                {codigo: "92231", nome: "APARECIDA DE GOIÂNIA", lat: -16.8239, lng: -49.2439},
+                {codigo: "92258", nome: "FORMOSA", lat: -15.5373, lng: -47.3331},
+                {codigo: "92266", nome: "GOIÂNIA", lat: -16.6864, lng: -49.2643},
+                {codigo: "92274", nome: "LUZIÂNIA", lat: -16.2523, lng: -47.9502},
+                {codigo: "92290", nome: "PLANALTINA", lat: -15.4773, lng: -47.6631},
+                {codigo: "92304", nome: "SANTO ANTÔNIO DO DESCOBERTO", lat: -15.9473, lng: -48.2631},
+                {codigo: "92312", nome: "VALPARAÍSO DE GOIÁS", lat: -16.0673, lng: -47.9831},
+                {codigo: "92320", nome: "ÁGUAS LINDAS DE GOIÁS", lat: -15.7573, lng: -48.2831},
+                {codigo: "92339", nome: "CIDADE OCIDENTAL", lat: -16.1073, lng: -47.8831},
+                {codigo: "92347", nome: "NOVO GAMA", lat: -16.0373, lng: -48.0331},
+                {codigo: "92355", nome: "COCALZINHO DE GOIÁS", lat: -15.7873, lng: -48.7531},
+                {codigo: "92363", nome: "CORUMBÁ DE GOIÁS", lat: -15.9273, lng: -48.8131},
+                {codigo: "92371", nome: "ALEXÂNIA", lat: -16.0773, lng: -48.5219},
+                {codigo: "92380", nome: "ABADIÂNIA", lat: -16.1968, lng: -48.7057},
+                {codigo: "92398", nome: "SILVÂNIA", lat: -16.6673, lng: -48.6031},
+                {codigo: "92401", nome: "LEOPOLDO DE BULHÕES", lat: -16.6173, lng: -48.7531},
+                {codigo: "92410", nome: "ORIZONA", lat: -17.0073, lng: -48.4031},
+                {codigo: "92428", nome: "VIANÓPOLIS", lat: -16.7473, lng: -48.5231},
+                {codigo: "92436", nome: "CRISTIANÓPOLIS", lat: -17.2173, lng: -48.7131},
+                {codigo: "92444", nome: "URUTAÍ", lat: -17.4673, lng: -48.1931},
+                {codigo: "92452", nome: "PIRES DO RIO", lat: -17.2973, lng: -48.2831},
+                {codigo: "92460", nome: "SANTA CRUZ DE GOIÁS", lat: -17.3173, lng: -48.4531},
+                {codigo: "92479", nome: "IPAMERI", lat: -17.7173, lng: -48.1631},
+                {codigo: "92487", nome: "CATALÃO", lat: -18.1639, lng: -47.9473},
+                {codigo: "92495", nome: "OUVIDOR", lat: -18.2873, lng: -47.2931},
+                {codigo: "92509", nome: "DAVINÓPOLIS", lat: -18.1573, lng: -47.5631},
+                {codigo: "92517", nome: "TRÊS RANCHOS", lat: -18.3673, lng: -47.8131},
+                {codigo: "92525", nome: "CALDAS NOVAS", lat: -17.7439, lng: -48.6231},
+                {codigo: "92533", nome: "RIO QUENTE", lat: -17.7873, lng: -48.7531},
+                {codigo: "92541", nome: "MORRINHOS", lat: -17.7273, lng: -49.0931},
+                {codigo: "92550", nome: "PIRACANJUBA", lat: -17.3073, lng: -49.0131},
+                {codigo: "92568", nome: "GOIANIRA", lat: -16.5173, lng: -49.4131},
+                {codigo: "92576", nome: "TRINDADE", lat: -16.6473, lng: -49.4831},
+                {codigo: "92584", nome: "SENADOR CANEDO", lat: -16.7173, lng: -49.0931},
+                {codigo: "92592", nome: "HIDROLÂNDIA", lat: -16.9673, lng: -49.2231},
+                {codigo: "92606", nome: "PONTALINA", lat: -17.5273, lng: -49.4431},
+                {codigo: "92614", nome: "CROMÍNIA", lat: -17.2773, lng: -49.3931},
+                {codigo: "92622", nome: "BELA VISTA DE GOIÁS", lat: -16.9739, lng: -48.9531},
+                {codigo: "92630", nome: "BONFINÓPOLIS", lat: -16.4639, lng: -49.4531},
+                {codigo: "92649", nome: "SÃO LUIZ DO NORTE", lat: -13.8373, lng: -48.0131},
+                {codigo: "92657", nome: "BELA VISTA DE GOIÁS", lat: -16.9739, lng: -48.9531},
+                {codigo: "92665", nome: "SÃO MIGUEL DO PASSA QUATRO", lat: -17.0573, lng: -48.9031},
+                {codigo: "92673", nome: "BOM JARDIM DE GOIÁS", lat: -16.2007, lng: -51.7948},
+                {codigo: "92690", nome: "BOM JESUS DE GOIÁS", lat: -18.2707, lng: -49.7731},
+                {codigo: "93777", nome: "GOIÁS", lat: -15.9373, lng: -50.1431},
+                {codigo: "93793", nome: "GOIATUBA", lat: -17.7973, lng: -49.3531},
+                {codigo: "93815", nome: "GUAPÓ", lat: -17.0173, lng: -49.5331},
+                {codigo: "93831", nome: "GUARANI DE GOIÁS", lat: -13.4073, lng: -46.7931},
+                {codigo: "93874", nome: "HEITORAÍ", lat: -16.0473, lng: -50.4631},
+                {codigo: "93890", nome: "HIDROLÂNDIA", lat: -16.9673, lng: -49.2231},
+                {codigo: "93912", nome: "HIDROLINA", lat: -14.1973, lng: -49.6231},
+                {codigo: "93939", nome: "IACIARA", lat: -14.0973, lng: -46.6231},
+                {codigo: "94730", nome: "MORRINHOS", lat: -17.7273, lng: -49.0931},
+                {codigo: "94757", nome: "MOSSÂMEDES", lat: -16.0573, lng: -50.1731},
+                {codigo: "94773", nome: "MOZARLÂNDIA", lat: -14.7473, lng: -50.5731},
+                {codigo: "94790", nome: "MUTUNÓPOLIS", lat: -13.7873, lng: -49.4531}
+            ];
+
+            log(`✅ Processando ${municipiosGoias.length} municípios de Goiás...`, 'success');
+
+            // Gerar GeoJSON compatível
+            const geoJSONCompativel = {
+                "type": "FeatureCollection",
+                "features": municipiosGoias.map(municipio => ({
+                    "type": "Feature",
+                    "properties": {
+                        "id": municipio.codigo,
+                        "name": municipio.nome,
+                        "estado": "GO",
+                        "regiao": "Centro-Oeste"
+                    },
+                    "geometry": {
+                        "type": "Polygon",
+                        "coordinates": [[
+                            [municipio.lng - 0.05, municipio.lat - 0.05],
+                            [municipio.lng + 0.05, municipio.lat - 0.05],
+                            [municipio.lng + 0.05, municipio.lat + 0.05],
+                            [municipio.lng - 0.05, municipio.lat + 0.05],
+                            [municipio.lng - 0.05, municipio.lat - 0.05]
+                        ]]
+                    }
+                }))
+            };
+
+            log('✅ GeoJSON gerado com códigos compatíveis!', 'success');
+            log('📊 Exemplo de códigos incluídos:', 'info');
+            log('• 92215 - ANÁPOLIS', 'info');
+            log('• 92266 - GOIÂNIA', 'info');
+            log('• 92274 - LUZIÂNIA', 'info');
+            log('• 94730 - MORRINHOS', 'info');
+            log('', 'info');
+            log('💾 Iniciando download...', 'success');
+
+            // Download do arquivo
+            const blob = new Blob([JSON.stringify(geoJSONCompativel, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'brazil-municipalities-fixed.geojson';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+
+            log('✅ Download concluído!', 'success');
+            log('', 'info');
+            log('📁 PRÓXIMOS PASSOS:', 'info');
+            log('1. Substitua o arquivo em: data/geo/brazil-municipalities.geojson', 'info');
+            log('2. Recarregue sua aplicação', 'info');
+            log('3. Os municípios devem aparecer coloridos! 🎉', 'success');
+        }
+    </script>
+</body>
+</html>

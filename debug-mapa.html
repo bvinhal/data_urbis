@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Debug Mapa Eleitoral</title>
+    <style>
+        body { font-family: Arial; margin: 20px; line-height: 1.6; }
+        button { padding: 15px 30px; font-size: 16px; margin: 10px; cursor: pointer; background: #4CAF50; color: white; border: none; border-radius: 5px; }
+        .resultado { background: #f0f0f0; padding: 15px; margin: 15px 0; border-radius: 5px; }
+        .erro { background: #ffebee; }
+        .sucesso { background: #e8f5e8; }
+    </style>
+</head>
+<body>
+    <h1>🔍 Debug Mapa Eleitoral</h1>
+    
+    <p><strong>Instruções:</strong></p>
+    <ol>
+        <li>Abra sua aplicação em outra aba</li>
+        <li>Deixe esta aba aberta</li>
+        <li>Clique nos botões abaixo para debugar</li>
+    </ol>
+    
+    <button onclick="verificarDados()">📊 Verificar Dados</button>
+    <button onclick="forcarCores()">🎨 Forçar Cores</button>
+    <button onclick="analisarMapa()">🗺️ Analisar Mapa</button>
+    
+    <div id="resultado"></div>
+
+    <script>
+        function log(mensagem, tipo = 'info') {
+            const div = document.getElementById('resultado');
+            const classe = tipo === 'erro' ? 'resultado erro' : tipo === 'sucesso' ? 'resultado sucesso' : 'resultado';
+            div.innerHTML += `<div class="${classe}">[${new Date().toLocaleTimeString()}] ${mensagem}</div>`;
+        }
+        
+        async function verificarDados() {
+            log('🔍 Verificando dados da aplicação...', 'info');
+            
+            try {
+                // Tentar acessar dados via fetch direto
+                const responseEleitoral = await fetch('./data/electoral/2024_prefeito.json');
+                const dadosEleitorais = await responseEleitoral.json();
+                
+                log(`✅ Dados eleitorais: ${dadosEleitorais.length} registros`, 'sucesso');
+                
+                const eleitos = dadosEleitorais.filter(d => d.eleito === true);
+                log(`👑 Candidatos eleitos: ${eleitos.length}`, 'sucesso');
+                
+                if (eleitos.length > 0) {
+                    log(`📝 Primeiro eleito: ${eleitos[0].nome_municipio} - ${eleitos[0].nome_candidato} (${eleitos[0].partido})`, 'info');
+                }
+                
+                // Dados geográficos
+                const responseGeo = await fetch('./data/geo/brazil-municipalities.geojson');
+                const dadosGeo = await responseGeo.json();
+                
+                log(`✅ Dados geográficos: ${dadosGeo.features.length} features`, 'sucesso');
+                log(`📝 Primeira feature: ${dadosGeo.features[0].properties.name} (ID: ${dadosGeo.features[0].properties.id})`, 'info');
+                
+                // Verificar compatibilidade
+                const codigosEleitorais = [...new Set(dadosEleitorais.map(d => d.codigo_municipio))];
+                const codigosGeo = dadosGeo.features.map(f => f.properties.id);
+                const matches = codigosEleitorais.filter(c => codigosGeo.includes(c));
+                
+                log(`🔄 Compatibilidade: ${matches.length}/${codigosEleitorais.length} (${(matches.length/codigosEleitorais.length*100).toFixed(1)}%)`, matches.length > 0 ? 'sucesso' : 'erro');
+                
+                // Salvar dados globalmente
+                window.dadosEleitoraisDebug = dadosEleitorais;
+                window.dadosGeoDebug = dadosGeo;
+                window.eleitosDebug = eleitos;
+                
+            } catch (error) {
+                log(`❌ Erro ao verificar dados: ${error.message}`, 'erro');
+                log('💡 Certifique-se de que sua aplicação está rodando', 'info');
+            }
+        }
+        
+        function forcarCores() {
+            log('🎨 Tentando forçar cores...', 'info');
+            
+            if (!window.eleitosDebug) {
+                log('⚠️ Execute "Verificar Dados" primeiro!', 'erro');
+                return;
+            }
+            
+            // Tentar encontrar elementos do mapa em todas as abas
+            const cores = ['#ff0000', '#0000ff', '#ff9800', '#4caf50', '#9c27b0'];
+            let elementosEncontrados = 0;
+            
+            // Função para aplicar cores
+            function aplicarCoresEmElementos() {
+                const seletores = [
+                    'path[fill]',
+                    'path[style*="fill"]', 
+                    'polygon[fill]',
+                    '.leaflet-interactive',
+                    'svg path',
+                    '[class*="municipio"]'
+                ];
+                
+                seletores.forEach(seletor => {
+                    const elementos = document.querySelectorAll(seletor);
+                    if (elementos.length > 0) {
+                        log(`Encontrados ${elementos.length} elementos com seletor: ${seletor}`, 'info');
+                        
+                        elementos.forEach((el, i) => {
+                            const cor = cores[i % cores.length];
+                            
+                            // Aplicar cor de múltiplas formas
+                            el.style.fill = cor;
+                            el.style.fillOpacity = '0.8';
+                            el.setAttribute('fill', cor);
+                            el.setAttribute('fill-opacity', '0.8');
+                            
+                            elementosEncontrados++;
+                        });
+                    }
+                });
+            }
+            
+            // Aplicar cores na página atual
+            aplicarCoresEmElementos();
+            
+            // Tentar aplicar em iframes
+            const iframes = document.querySelectorAll('iframe');
+            iframes.forEach(iframe => {
+                try {
+                    const doc = iframe.contentDocument || iframe.contentWindow.document;
+                    const elementos = doc.querySelectorAll('path, polygon');
+                    elementos.forEach((el, i) => {
+                        const cor = cores[i % cores.length];
+                        el.style.fill = cor;
+                        el.style.fillOpacity = '0.8';
+                        elementosEncontrados++;
+                    });
+                } catch (e) {
+                    log('Não foi possível acessar iframe (CORS)', 'info');
+                }
+            });
+            
+            if (elementosEncontrados > 0) {
+                log(`✅ Cores aplicadas em ${elementosEncontrados} elementos!`, 'sucesso');
+            } else {
+                log('❌ Nenhum elemento de mapa encontrado nesta página', 'erro');
+                log('💡 Certifique-se de estar na aba da sua aplicação', 'info');
+            }
+        }
+        
+        function analisarMapa() {
+            log('🗺️ Analisando elementos do mapa...', 'info');
+            
+            const seletores = [
+                'svg', 'canvas', '.leaflet-container', '.mapboxgl-map',
+                'path', 'polygon', 'rect', 'circle',
+                '[class*="map"]', '[id*="map"]'
+            ];
+            
+            let totalElementos = 0;
+            
+            seletores.forEach(seletor => {
+                const elementos = document.querySelectorAll(seletor);
+                if (elementos.length > 0) {
+                    log(`${seletor}: ${elementos.length} elementos`, 'info');
+                    totalElementos += elementos.length;
+                    
+                    // Analisar primeiros elementos
+                    Array.from(elementos).slice(0, 3).forEach((el, i) => {
+                        const fill = el.getAttribute('fill') || el.style.fill || 'não definido';
+                        const classes = el.className || 'sem classes';
+                        log(`  Elemento ${i+1}: fill=${fill}, classes=${classes}`, 'info');
+                    });
+                }
+            });
+            
+            if (totalElementos === 0) {
+                log('❌ Nenhum elemento de mapa encontrado!', 'erro');
+                log('💡 Verifique se está na página correta', 'info');
+            } else {
+                log(`✅ Total de elementos encontrados: ${totalElementos}`, 'sucesso');
+            }
+        }
+        
+        // Auto-executar verificação ao carregar
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                log('🚀 Debug carregado! Clique em "Verificar Dados" para começar.', 'info');
+            }, 1000);
+        });
+    </script>
+</body>
+</html>

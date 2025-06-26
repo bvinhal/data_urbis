@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Debug Cores - Simples</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #1a1a1a;
+            color: #fff;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: #2a2a2a;
+            border-radius: 15px;
+            padding: 30px;
+        }
+        h1 {
+            text-align: center;
+            color: #ff6b6b;
+            margin-bottom: 30px;
+        }
+        .section {
+            background: #333;
+            border-radius: 10px;
+            padding: 20px;
+            margin: 20px 0;
+            border-left: 4px solid #ff6b6b;
+        }
+        button {
+            background: #ff6b6b;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+        }
+        button:hover {
+            background: #ff5252;
+        }
+        .output {
+            background: #000;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 15px 0;
+            font-family: monospace;
+            max-height: 400px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+        .success { color: #4caf50; }
+        .error { color: #f44336; }
+        .warning { color: #ff9800; }
+        .info { color: #2196f3; }
+        .highlight { color: #ffd700; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎨 Debug Cores - Versão Simples</h1>
+        
+        <div class="section">
+            <h3>🔍 Teste 1: Verificar Dados Eleitorais</h3>
+            <button onclick="testarDadosEleitorais()">📊 Testar Dados Eleitorais</button>
+            <div id="output1" class="output" style="display: none;"></div>
+        </div>
+
+        <div class="section">
+            <h3>🗺️ Teste 2: Verificar Dados Geográficos</h3>
+            <button onclick="testarDadosGeograficos()">🗺️ Testar GeoJSON</button>
+            <div id="output2" class="output" style="display: none;"></div>
+        </div>
+
+        <div class="section">
+            <h3>🔄 Teste 3: Comparar Compatibilidade</h3>
+            <button onclick="testarCompatibilidade()">🔄 Testar Compatibilidade</button>
+            <div id="output3" class="output" style="display: none;"></div>
+        </div>
+
+        <div class="section">
+            <h3>🛠️ Soluções</h3>
+            <button onclick="gerarArquivosTeste()">🧪 Gerar Arquivos de Teste</button>
+            <button onclick="gerarInstrucoes()">📋 Gerar Instruções</button>
+            <div id="output4" class="output" style="display: none;"></div>
+        </div>
+    </div>
+
+    <script>
+        let dadosEleitorais = null;
+        let dadosGeoJSON = null;
+
+        function log(message, type, outputId) {
+            const output = document.getElementById(outputId);
+            if (output.style.display === 'none') {
+                output.style.display = 'block';
+            }
+            
+            const timestamp = new Date().toLocaleTimeString();
+            const span = document.createElement('span');
+            span.className = type || 'info';
+            span.textContent = '[' + timestamp + '] ' + message + '\n';
+            output.appendChild(span);
+            output.scrollTop = output.scrollHeight;
+        }
+
+        async function testarDadosEleitorais() {
+            log('Testando dados eleitorais...', 'highlight', 'output1');
+            
+            try {
+                const response = await fetch('./data/electoral/2024_prefeito.json');
+                if (!response.ok) {
+                    throw new Error('Erro ' + response.status + ': ' + response.statusText);
+                }
+                
+                dadosEleitorais = await response.json();
+                log('✅ Arquivo carregado: ' + dadosEleitorais.length + ' registros', 'success', 'output1');
+                
+                // Verificar candidatos eleitos
+                const eleitos = dadosEleitorais.filter(d => {
+                    return d.eleito === true || d.eleito === 'true' || d.eleito === 1 || d.eleito === '1';
+                });
+                
+                log('👑 Candidatos eleitos: ' + eleitos.length, eleitos.length > 0 ? 'success' : 'error', 'output1');
+                
+                if (eleitos.length === 0) {
+                    log('❌ PROBLEMA: Nenhum candidato eleito!', 'error', 'output1');
+                    
+                    // Verificar valores do campo eleito
+                    const valoresEleito = Array.from(new Set(dadosEleitorais.map(d => d.eleito)));
+                    log('Valores no campo "eleito": ' + valoresEleito.join(', '), 'warning', 'output1');
+                    
+                    valoresEleito.forEach(valor => {
+                        const tipo = typeof valor;
+                        const quantidade = dadosEleitorais.filter(d => d.eleito === valor).length;
+                        log('  "' + valor + '" (' + tipo + '): ' + quantidade + ' registros', 'info', 'output1');
+                    });
+                } else {
+                    // Mostrar exemplos de eleitos
+                    log('Exemplos de eleitos:', 'info', 'output1');
+                    eleitos.slice(0, 3).forEach(eleito => {
+                        log('  ' + eleito.codigo_municipio + ' - ' + eleito.nome_municipio + ' - ' + eleito.nome_candidato, 'success', 'output1');
+                    });
+                }
+                
+                // Verificar códigos de município
+                const codigosUnicos = Array.from(new Set(dadosEleitorais.map(d => d.codigo_municipio)));
+                log('Códigos únicos: ' + codigosUnicos.length, 'info', 'output1');
+                log('Primeiros códigos: ' + codigosUnicos.slice(0, 5).join(', '), 'info', 'output1');
+                
+            } catch (error) {
+                log('❌ Erro: ' + error.message, 'error', 'output1');
+            }
+        }
+
+        async function testarDadosGeograficos() {
+            log('Testando dados geográficos...', 'highlight', 'output2');
+            
+            try {
+                const response = await fetch('./data/geo/brazil-municipalities.geojson');
+                if (!response.ok) {
+                    throw new Error('Erro ' + response.status + ': ' + response.statusText);
+                }
+                
+                dadosGeoJSON = await response.json();
+                log('✅ GeoJSON carregado: ' + dadosGeoJSON.features.length + ' features', 'success', 'output2');
+                
+                // Verificar estrutura da primeira feature
+                const primeira = dadosGeoJSON.features[0];
+                log('Propriedades da primeira feature:', 'info', 'output2');
+                Object.keys(primeira.properties).forEach(key => {
+                    log('  ' + key + ': ' + primeira.properties[key], 'info', 'output2');
+                });
+                
+                // Verificar campo de ID
+                const camposId = ['id', 'codigo', 'CD_MUN', 'codigo_municipio', 'GEOCODIGO'];
+                let campoIdEncontrado = null;
+                
+                camposId.forEach(campo => {
+                    if (primeira.properties[campo]) {
+                        campoIdEncontrado = campo;
+                        log('✅ Campo ID encontrado: "' + campo + '"', 'success', 'output2');
+                    }
+                });
+                
+                if (!campoIdEncontrado) {
+                    log('❌ PROBLEMA: Nenhum campo de ID padrão encontrado!', 'error', 'output2');
+                }
+                
+                // Listar códigos geográficos
+                const codigosGeo = dadosGeoJSON.features.map(f => {
+                    return f.properties.id || f.properties.codigo || f.properties.CD_MUN || f.properties.codigo_municipio || 'sem_codigo';
+                });
+                
+                log('Códigos geográficos: ' + codigosGeo.length, 'info', 'output2');
+                log('Primeiros códigos geo: ' + codigosGeo.slice(0, 5).join(', '), 'info', 'output2');
+                
+                // Verificar se há códigos sem valor
+                const semCodigo = codigosGeo.filter(c => c === 'sem_codigo' || !c).length;
+                if (semCodigo > 0) {
+                    log('⚠️ Features sem código: ' + semCodigo, 'warning', 'output2');
+                }
+                
+            } catch (error) {
+                log('❌ Erro: ' + error.message, 'error', 'output2');
+            }
+        }
+
+        async function testarCompatibilidade() {
+            log('Testando compatibilidade...', 'highlight', 'output3');
+            
+            if (!dadosEleitorais || !dadosGeoJSON) {
+                log('⚠️ Execute os testes 1 e 2 primeiro!', 'warning', 'output3');
+                return;
+            }
+            
+            // Extrair códigos eleitorais
+            const codigosEleitorais = Array.from(new Set(dadosEleitorais.map(d => d.codigo_municipio)));
+            
+            // Extrair códigos geográficos
+            const codigosGeo = dadosGeoJSON.features.map(f => {
+                return f.properties.id || f.properties.codigo || f.properties.CD_MUN || f.properties.codigo_municipio;
+            }).filter(c => c); // Remove valores vazios
+            
+            log('Códigos eleitorais: ' + codigosEleitorais.length, 'info', 'output3');
+            log('Códigos geográficos: ' + codigosGeo.length, 'info', 'output3');
+            
+            // Verificar matches
+            const matches = codigosEleitorais.filter(codigo => codigosGeo.includes(codigo));
+            const percentual = ((matches.length / codigosEleitorais.length) * 100).toFixed(1);
+            
+            log('Matches encontrados: ' + matches.length + '/' + codigosEleitorais.length + ' (' + percentual + '%)', 
+                matches.length > 0 ? 'success' : 'error', 'output3');
+            
+            if (matches.length === 0) {
+                log('❌ PROBLEMA CRÍTICO: Nenhum código compatível!', 'error', 'output3');
+                log('Esta é a principal causa das cores não funcionarem!', 'error', 'output3');
+                
+                log('Exemplos de incompatibilidade:', 'warning', 'output3');
+                log('  Eleitorais: ' + codigosEleitorais.slice(0, 3).join(', '), 'warning', 'output3');
+                log('  Geográficos: ' + codigosGeo.slice(0, 3).join(', '), 'warning', 'output3');
+                
+            } else if (matches.length < codigosEleitorais.length) {
+                log('⚠️ Compatibilidade parcial: apenas ' + percentual + '%', 'warning', 'output3');
+                
+                // Mostrar alguns matches e não-matches
+                log('Exemplos de matches:', 'success', 'output3');
+                matches.slice(0, 3).forEach(codigo => {
+                    const municipio = dadosEleitorais.find(d => d.codigo_municipio === codigo);
+                    log('  ' + codigo + ' - ' + (municipio ? municipio.nome_municipio : 'N/A'), 'success', 'output3');
+                });
+                
+                const semMatch = codigosEleitorais.filter(codigo => !codigosGeo.includes(codigo));
+                if (semMatch.length > 0) {
+                    log('Exemplos sem match:', 'error', 'output3');
+                    semMatch.slice(0, 3).forEach(codigo => {
+                        const municipio = dadosEleitorais.find(d => d.codigo_municipio === codigo);
+                        log('  ' + codigo + ' - ' + (municipio ? municipio.nome_municipio : 'N/A'), 'error', 'output3');
+                    });
+                }
+                
+            } else {
+                log('✅ Compatibilidade perfeita! 100%', 'success', 'output3');
+                log('O problema das cores deve estar em outro lugar...', 'info', 'output3');
+                
+                // Verificar se há eleitos compatíveis
+                const eleitos = dadosEleitorais.filter(d => d.eleito === true || d.eleito === 'true');
+                const eleitosCompativeis = eleitos.filter(e => codigosGeo.includes(e.codigo_municipio));
+                
+                log('Candidatos eleitos compatíveis: ' + eleitosCompativeis.length + '/' + eleitos.length, 
+                    eleitosCompativeis.length > 0 ? 'success' : 'error', 'output3');
+                
+                if (eleitosCompativeis.length === 0) {
+                    log('❌ PROBLEMA: Nenhum eleito tem código compatível!', 'error', 'output3');
+                }
+            }
+        }
+
+        function gerarArquivosTeste() {
+            log('Gerando arquivos de teste...', 'highlight', 'output4');
+            
+            // Dados eleitorais de teste simples
+            const dadosTeste = [
+                {
+                    codigo_municipio: "TESTE001",
+                    nome_municipio: "TESTE MUNICIPIO 1",
+                    nome_candidato: "CANDIDATO TESTE 1",
+                    partido: "PT",
+                    partido_ideologia: "esquerda",
+                    votos: 10000,
+                    percentual: 60.0,
+                    eleito: true
+                },
+                {
+                    codigo_municipio: "TESTE002", 
+                    nome_municipio: "TESTE MUNICIPIO 2",
+                    nome_candidato: "CANDIDATO TESTE 2",
+                    partido: "PSDB",
+                    partido_ideologia: "centro",
+                    votos: 8000,
+                    percentual: 55.0,
+                    eleito: true
+                }
+            ];
+            
+            // GeoJSON de teste correspondente
+            const geoTeste = {
+                "type": "FeatureCollection",
+                "features": [
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "id": "TESTE001",
+                            "name": "TESTE MUNICIPIO 1"
+                        },
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[[-49.4, -16.8], [-49.2, -16.8], [-49.2, -16.6], [-49.4, -16.6], [-49.4, -16.8]]]
+                        }
+                    },
+                    {
+                        "type": "Feature",
+                        "properties": {
+                            "id": "TESTE002",
+                            "name": "TESTE MUNICIPIO 2"
+                        },
+                        "geometry": {
+                            "type": "Polygon",
+                            "coordinates": [[[-49.1, -16.4], [-48.9, -16.4], [-48.9, -16.2], [-49.1, -16.2], [-49.1, -16.4]]]
+                        }
+                    }
+                ]
+            };
+            
+            // Download dos arquivos
+            downloadFile('dados-teste-eleitorais.json', JSON.stringify(dadosTeste, null, 2));
+            downloadFile('dados-teste-geo.geojson', JSON.stringify(geoTeste, null, 2));
+            
+            log('✅ Arquivos de teste gerados!', 'success', 'output4');
+            log('📋 Como usar:', 'info', 'output4');
+            log('1. Faça backup dos seus arquivos atuais', 'info', 'output4');
+            log('2. Substitua pelos arquivos de teste', 'info', 'output4');
+            log('3. Recarregue a aplicação', 'info', 'output4');
+            log('4. Se as cores aparecerem, o problema está nos dados originais', 'info', 'output4');
+            log('5. Se não aparecerem, o problema está no código React', 'info', 'output4');
+        }
+
+        function gerarInstrucoes() {
+            const instrucoes = `INSTRUÇÕES PARA RESOLVER PROBLEMA DE CORES
+
+DIAGNÓSTICO REALIZADO:
+- Execute os testes 1, 2 e 3 desta ferramenta
+- Identifique onde está o problema específico
+
+POSSÍVEIS PROBLEMAS E SOLUÇÕES:
+
+1. PROBLEMA: Nenhum candidato eleito
+   CAUSA: Campo "eleito" com valor incorreto
+   SOLUÇÃO: Verificar se é true, "true", 1, ou "1"
+   CÓDIGO: filter(d => d.eleito === true || d.eleito === "true")
+
+2. PROBLEMA: Códigos incompatíveis (0% match)
+   CAUSA: Códigos diferentes entre dados eleitorais e GeoJSON
+   SOLUÇÃO: Usar conversor para ajustar códigos
+   AÇÃO: Reconverter dados do IBGE com códigos corretos
+
+3. PROBLEMA: Campo ID incorreto no GeoJSON
+   CAUSA: Sistema procura "id" mas arquivo tem "codigo" ou "CD_MUN"
+   SOLUÇÃO: Editar GeoJSON para usar "id" como campo principal
+   CÓDIGO: properties: { "id": codigo_municipio, ... }
+
+4. PROBLEMA: Compatibilidade parcial (< 100%)
+   CAUSA: Alguns municípios não têm correspondência
+   SOLUÇÃO: Verificar mapeamento ou aceitar parcial
+   AÇÃO: Usar apenas municípios com match
+
+5. PROBLEMA: Código React não aplica cores
+   CAUSA: Erro na função de estilo ou filtros
+   SOLUÇÃO: Adicionar console.log para debug
+   CÓDIGO: Verificar função getFeatureStyle()
+
+TESTE RÁPIDO:
+1. Use os arquivos de teste gerados
+2. Se funcionarem = problema nos dados originais
+3. Se não funcionarem = problema no código React
+
+PRÓXIMOS PASSOS:
+1. Execute todos os testes desta ferramenta
+2. Identifique o problema específico
+3. Aplique a solução correspondente
+4. Teste com arquivos simples se necessário`;
+
+            downloadFile('instrucoes-debug-cores.txt', instrucoes);
+            log('📋 Instruções detalhadas geradas!', 'success', 'output4');
+        }
+
+        function downloadFile(filename, content) {
+            const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
