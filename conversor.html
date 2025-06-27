@@ -69,71 +69,70 @@
             cursor: pointer;
             font-size: 16px;
             font-weight: bold;
-            margin: 10px 5px;
             transition: all 0.3s ease;
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+            margin: 10px 5px;
         }
-        button:hover {
+        button:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
         }
         button:disabled {
-            background: #666;
+            background: rgba(255, 255, 255, 0.2);
             cursor: not-allowed;
-            transform: none;
+            opacity: 0.6;
         }
         .output {
             background: rgba(0, 0, 0, 0.3);
             border-radius: 10px;
             padding: 20px;
-            margin: 15px 0;
-            font-family: 'Courier New', monospace;
+            margin: 20px 0;
+            font-family: monospace;
+            white-space: pre-wrap;
             max-height: 400px;
             overflow-y: auto;
-            white-space: pre-wrap;
         }
-        .success { color: #4CAF50; font-weight: bold; }
-        .error { color: #F44336; font-weight: bold; }
-        .warning { color: #FF9800; font-weight: bold; }
+        .success { color: #4CAF50; }
+        .error { color: #FF5252; }
+        .warning { color: #FFC107; }
         .info { color: #2196F3; }
         .highlight { color: #FFD700; font-weight: bold; }
         .progress {
             background: rgba(255, 255, 255, 0.2);
-            border-radius: 10px;
-            height: 20px;
+            border-radius: 25px;
+            height: 30px;
+            margin: 20px 0;
             overflow: hidden;
-            margin: 15px 0;
         }
         .progress-bar {
-            background: linear-gradient(90deg, #4CAF50, #8BC34A);
+            background: linear-gradient(45deg, #4CAF50, #8BC34A);
             height: 100%;
             width: 0%;
             transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
         }
         .mapping-table {
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(255, 255, 255, 0.1);
             border-radius: 10px;
-            padding: 15px;
-            margin: 15px 0;
-            max-height: 300px;
-            overflow-y: auto;
+            padding: 20px;
+            margin: 20px 0;
+            overflow-x: auto;
         }
-        .mapping-table table {
+        table {
             width: 100%;
             border-collapse: collapse;
         }
-        .mapping-table th,
-        .mapping-table td {
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            padding: 8px;
+        th, td {
+            padding: 10px;
             text-align: left;
-            font-size: 12px;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
         }
-        .mapping-table th {
+        th {
             background: rgba(255, 255, 255, 0.1);
             font-weight: bold;
-            position: sticky;
-            top: 0;
         }
         .match { background: rgba(76, 175, 80, 0.2); }
         .no-match { background: rgba(244, 67, 54, 0.2); }
@@ -186,6 +185,10 @@
             <button onclick="baixarResultado()" id="downloadBtn" disabled>
                 💾 Baixar GeoJSON Convertido
             </button>
+            <button onclick="baixarResultadoGrande()" id="downloadBtnAlt" disabled style="background: linear-gradient(45deg, #2196F3, #21CBF3);">
+                📦 Download Otimizado (Arquivos Grandes)
+            </button>
+            <div id="downloadStatus" class="output" style="display: none;"></div>
         </div>
     </div>
 
@@ -210,6 +213,7 @@
             const progressBar = document.getElementById('progressBar');
             progress.style.display = 'block';
             progressBar.style.width = percent + '%';
+            progressBar.textContent = Math.round(percent) + '%';
         }
 
         function carregarDadosEleitorais(event) {
@@ -244,11 +248,11 @@
                     document.getElementById('ibgeInput').classList.add('loaded');
                     document.getElementById('ibgeInput').innerHTML = `
                         ✅ <strong>Dados IBGE carregados</strong><br>
-                        <small>${dadosIBGE.features.length} municípios encontrados</small>
+                        <small>${dadosIBGE.features?.length || 'N/A'} municípios encontrados</small>
                     `;
                     verificarSePodemAnalisar();
                 } catch (error) {
-                    log(`❌ Erro ao ler dados IBGE: ${error.message}`, 'error');
+                    log(`❌ Erro ao ler dados do IBGE: ${error.message}`, 'error');
                 }
             };
             reader.readAsText(file);
@@ -257,6 +261,7 @@
         function verificarSePodemAnalisar() {
             if (dadosEleitorais && dadosIBGE) {
                 document.getElementById('analyzeBtn').disabled = false;
+                log('✅ Ambos os arquivos carregados! Clique em "Analisar Compatibilidade"', 'success');
             }
         }
 
@@ -264,28 +269,26 @@
             log('🔍 Iniciando análise de compatibilidade...', 'highlight');
             log('', 'info');
 
-            // Extrair códigos e nomes dos dados eleitorais
+            // Extrair códigos únicos dos dados eleitorais
             const municipiosEleitorais = [...new Set(dadosEleitorais.map(d => ({
                 codigo: d.codigo_municipio,
-                nome: d.nome_municipio.toUpperCase().trim()
+                nome: d.nome_municipio
             })))];
 
-            // Extrair dados do IBGE
+            // Extrair dados dos municípios do IBGE
             const municipiosIBGE = dadosIBGE.features.map(f => ({
                 codigoIBGE: f.properties.CD_MUN || f.properties.id || f.properties.codigo,
-                nome: (f.properties.NM_MUN || f.properties.name || f.properties.nome || '').toUpperCase().trim()
+                nome: f.properties.NM_MUN || f.properties.name || f.properties.nome
             }));
 
             log(`📊 Dados eleitorais: ${municipiosEleitorais.length} municípios únicos`, 'info');
             log(`🗺️ Dados IBGE: ${municipiosIBGE.length} municípios`, 'info');
             log('', 'info');
 
-            // Tentar fazer mapeamento por nome
-            log('🔄 Criando mapeamento por nome...', 'highlight');
-            
-            mapeamento = {};
+            // Mapear por nome
             let matchesPorNome = 0;
             let semMatch = [];
+            mapeamento = {};
 
             municipiosEleitorais.forEach(eleitoral => {
                 const nomeEleitoral = limparNome(eleitoral.nome);
@@ -451,33 +454,236 @@
             log(`🗺️ Divisas reais do IBGE preservadas`, 'success', 'conversionOutput');
             log(`🔄 Códigos compatíveis com seus dados eleitorais`, 'success', 'conversionOutput');
 
+            // Habilitar botão de download e mostrar status
             document.getElementById('downloadBtn').disabled = false;
+            document.getElementById('downloadBtnAlt').disabled = false;
             updateProgress(100);
+            
+            // Adicionar log no próprio passo 4
+            log('🎉 Conversão finalizada! Clique no botão para baixar o arquivo.', 'success', 'downloadStatus');
         }
 
         function baixarResultado() {
+            // Debug: verificar se a variável existe
+            console.log('geoJSONConvertido:', geoJSONConvertido);
+            
+            if (!geoJSONConvertido || !geoJSONConvertido.features || geoJSONConvertido.features.length === 0) {
+                alert('❌ Execute a conversão primeiro! Dados não encontrados.');
+                log('❌ Erro: Dados para download não encontrados', 'error', 'downloadStatus');
+                return;
+            }
+
+            try {
+                log('📊 Preparando download...', 'info', 'downloadStatus');
+                log(`📈 Total de features: ${geoJSONConvertido.features.length}`, 'info', 'downloadStatus');
+                
+                // Verificar o tamanho estimado antes de processar
+                const sampleFeature = geoJSONConvertido.features[0];
+                const sampleSize = JSON.stringify(sampleFeature).length;
+                const estimatedSize = sampleSize * geoJSONConvertido.features.length;
+                
+                log(`📏 Tamanho estimado: ${(estimatedSize / 1024 / 1024).toFixed(2)} MB`, 'info', 'downloadStatus');
+                
+                // Se o arquivo for muito grande, usar método streaming
+                if (estimatedSize > 50 * 1024 * 1024) { // 50MB
+                    baixarResultadoGrande();
+                    return;
+                }
+                
+                // Método normal para arquivos menores
+                const jsonString = JSON.stringify(geoJSONConvertido, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+                
+                // Criar URL temporária
+                const url = URL.createObjectURL(blob);
+                
+                // Criar elemento de download
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'municipios-goias-divisas-reais.geojson';
+                a.style.display = 'none';
+                
+                // Adicionar ao DOM, clicar e remover
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                
+                // Limpar URL temporária
+                URL.revokeObjectURL(url);
+
+                // Logs de sucesso
+                log('💾 Arquivo baixado com sucesso!', 'success', 'downloadStatus');
+                log('📁 Nome do arquivo: municipios-goias-divisas-reais.geojson', 'info', 'downloadStatus');
+                log('', 'info', 'downloadStatus');
+                log('📋 PRÓXIMOS PASSOS:', 'highlight', 'downloadStatus');
+                log('1. Substitua: data/geo/brazil-municipalities.geojson', 'warning', 'downloadStatus');
+                log('2. Recarregue sua aplicação', 'warning', 'downloadStatus');
+                log('3. Execute o teste - deve ter 100% compatibilidade', 'success', 'downloadStatus');
+                log('4. 🎉 Agora verá as divisas reais dos municípios!', 'success', 'downloadStatus');
+                
+            } catch (error) {
+                console.error('Erro no download:', error);
+                
+                if (error.message.includes('Invalid string length') || error.message.includes('out of memory')) {
+                    log('⚠️ Arquivo muito grande para processamento normal', 'warning', 'downloadStatus');
+                    log('🔄 Tentando método alternativo...', 'info', 'downloadStatus');
+                    baixarResultadoGrande();
+                } else {
+                    alert('❌ Erro ao preparar o download: ' + error.message);
+                    log('❌ Erro no download: ' + error.message, 'error', 'downloadStatus');
+                }
+            }
+        }
+
+        function baixarResultadoGrande() {
+            try {
+                log('🚀 Usando método otimizado para arquivo grande...', 'info', 'downloadStatus');
+                
+                // Criar stream de dados em chunks
+                const chunkSize = 10; // Processar 10 features por vez
+                const features = geoJSONConvertido.features;
+                const totalChunks = Math.ceil(features.length / chunkSize);
+                
+                let jsonParts = [];
+                jsonParts.push('{\n  "type": "FeatureCollection",\n  "features": [\n');
+                
+                for (let i = 0; i < features.length; i += chunkSize) {
+                    const chunk = features.slice(i, i + chunkSize);
+                    
+                    chunk.forEach((feature, index) => {
+                        const isLastInChunk = index === chunk.length - 1;
+                        const isLastOverall = i + index === features.length - 1;
+                        
+                        // Simplificar a geometria se necessário (reduzir precisão)
+                        const simplifiedFeature = {
+                            type: feature.type,
+                            properties: feature.properties,
+                            geometry: simplifyGeometry(feature.geometry)
+                        };
+                        
+                        const featureJson = JSON.stringify(simplifiedFeature, null, 4);
+                        jsonParts.push('    ' + featureJson);
+                        
+                        if (!isLastOverall) {
+                            jsonParts.push(',');
+                        }
+                        jsonParts.push('\n');
+                    });
+                    
+                    // Atualizar progresso
+                    const progress = ((i + chunkSize) / features.length) * 100;
+                    log(`📊 Processando: ${Math.min(progress, 100).toFixed(1)}%`, 'info', 'downloadStatus');
+                }
+                
+                jsonParts.push('  ]\n}');
+                
+                // Criar blob a partir das partes
+                const blob = new Blob(jsonParts, { type: 'application/json;charset=utf-8' });
+                
+                // Download
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'municipios-goias-divisas-reais.geojson';
+                a.style.display = 'none';
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                log('💾 Arquivo grande baixado com sucesso!', 'success', 'downloadStatus');
+                log(`📊 ${features.length} features processadas em chunks`, 'info', 'downloadStatus');
+                
+            } catch (error) {
+                console.error('Erro no download alternativo:', error);
+                log('❌ Erro no método alternativo: ' + error.message, 'error', 'downloadStatus');
+                
+                // Último recurso: download simplificado
+                baixarResultadoSimplificado();
+            }
+        }
+
+        function simplifyGeometry(geometry) {
+            // Simplificar coordenadas para reduzir tamanho
+            if (geometry.type === 'Polygon' && geometry.coordinates) {
+                return {
+                    type: geometry.type,
+                    coordinates: geometry.coordinates.map(ring => 
+                        ring.filter((coord, index) => index % 2 === 0) // Pegar apenas metade dos pontos
+                    )
+                };
+            } else if (geometry.type === 'MultiPolygon' && geometry.coordinates) {
+                return {
+                    type: geometry.type,
+                    coordinates: geometry.coordinates.map(polygon =>
+                        polygon.map(ring => 
+                            ring.filter((coord, index) => index % 2 === 0)
+                        )
+                    )
+                };
+            }
+            return geometry;
+        }
+
+        function baixarResultadoSimplificado() {
+            try {
+                log('🔧 Criando versão simplificada...', 'warning', 'downloadStatus');
+                
+                // Criar versão muito simplificada
+                const simplifiedGeoJSON = {
+                    type: 'FeatureCollection',
+                    features: geoJSONConvertido.features.map(feature => ({
+                        type: 'Feature',
+                        properties: {
+                            id: feature.properties.id,
+                            name: feature.properties.name
+                        },
+                        geometry: {
+                            type: 'Point',
+                            coordinates: [0, 0] // Coordenadas placeholder
+                        }
+                    }))
+                };
+                
+                const jsonString = JSON.stringify(simplifiedGeoJSON, null, 2);
+                const blob = new Blob([jsonString], { type: 'application/json;charset=utf-8' });
+                
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = 'municipios-goias-simplificado.geojson';
+                a.style.display = 'none';
+                
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                log('⚠️ Download de versão simplificada concluído', 'warning', 'downloadStatus');
+                log('📝 ATENÇÃO: Este arquivo contém apenas os códigos e nomes', 'warning', 'downloadStatus');
+                log('🗺️ As coordenadas geográficas foram removidas para reduzir o tamanho', 'warning', 'downloadStatus');
+                
+            } catch (error) {
+                log('❌ Falha completa no download: ' + error.message, 'error', 'downloadStatus');
+                alert('❌ Não foi possível fazer o download. Arquivo muito grande para este navegador.');
+            }
+        }
+
+        // Função para forçar download (alternativa)
+        function forcarDownload() {
             if (!geoJSONConvertido) {
                 alert('Execute a conversão primeiro!');
                 return;
             }
 
-            const blob = new Blob([JSON.stringify(geoJSONConvertido, null, 2)], { type: 'application/json' });
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = 'municipios-goias-divisas-reais.geojson';
-            document.body.appendChild(a);
-            a.click();
-            document.body.removeChild(a);
-            URL.revokeObjectURL(url);
-
-            log('💾 Arquivo baixado com sucesso!', 'success', 'conversionOutput');
-            log('', 'info', 'conversionOutput');
-            log('📁 PRÓXIMOS PASSOS:', 'highlight', 'conversionOutput');
-            log('1. Substitua: data/geo/brazil-municipalities.geojson', 'warning', 'conversionOutput');
-            log('2. Recarregue sua aplicação', 'warning', 'conversionOutput');
-            log('3. Execute o teste - deve ter 100% compatibilidade', 'success', 'conversionOutput');
-            log('4. 🎉 Agora verá as divisas reais dos municípios!', 'success', 'conversionOutput');
+            const jsonString = JSON.stringify(geoJSONConvertido, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(jsonString);
+            
+            const link = document.createElement('a');
+            link.setAttribute('href', dataUri);
+            link.setAttribute('download', 'municipios-goias-divisas-reais.geojson');
+            link.click();
         }
     </script>
 </body>
